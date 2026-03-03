@@ -1,0 +1,63 @@
+﻿@page
+@model BioDataApp.Pages.Users.ListModel
+@{
+}
+<div class="bg-secondary bg-opacity-10 py-2 mb-5">
+    <div class="container">
+        <h1>All Users</h1>
+    </div>
+</div>
+
+<div class="container">
+
+    <div>
+        <a href="/Users/AddBio" class="btn btn-secondary ms-2">Add a Biodata</a>
+        <a href="/Users/Country" class="btn btn-secondary ms-2">Add a Country</a>
+        <a href="/Users/State" class="btn btn-secondary ms-2">Add a state</a>
+    </div>
+
+    @if (Model.UserList.Count == 0)
+    {
+        <p>No records found.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Middle Name</th>
+                    <th>Gender</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Date of Birth</th>
+                    <th>Address</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.UserList)
+                {
+                    <tr>
+                        <td>@user.Id</td>
+                        <td>@user.Title</td>
+                        <td>@user.FirstName</td>
+                        <td>@user.LastName</td>
+                        <td>@user.MiddleName</td>
+                        <td>@user.Gender</td>
+                        <td>@user.Email</td>
+                        <td>@user.PhoneNumber</td>
+                        <td>@user.DateofBirth</td>
+                        <td>@user.Address</td>
+                        <td>
+                            <a href="/Users/EditBio?id=@user.Id" class="btn btn-primary btn-sm">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
