@@ -5,7 +5,7 @@ namespace BioDataApp.Models.Users
     public class User
     {
         public int Id { get; set; }
-        [Required(ErrorMessage = "Title is required")]
+        //[Required(ErrorMessage = "Title is required")]
         public string Title { get; set; }
         [MaxLength(20)]
         [Required(ErrorMessage = "First Name is required")]
@@ -37,8 +37,9 @@ namespace BioDataApp.Models.Users
     public class  LGATab
     {
         public int Id { get; set; }
-        public string LGACode { get; set; }
-        public string LGAName { get; set; }
-        public StateTab StateTab { get; set; }
+        public int? StateTabId { get; set; }  // Add this foreign key
+        public string? LGACode { get; set; }
+        public string? LGAName { get; set; }
+        public StateTab? StateTab { get; set; }
     }
 }

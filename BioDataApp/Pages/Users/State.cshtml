@@ -2,195 +2,242 @@
 @model BioDataApp.Pages.Users.StateModel
 @{
 }
-<form method="post">
-<div class="bg-secondary bg-opacity-10 py-2 mb-5">
-    <div class="container">
-        <h1>Add Country Information</h1>
-    </div>
-</div>
 
+<!-- I'm calling validateForm when the form submits -->
+<!-- If it returns false the form stops and shows the errors -->
+<!-- If it returns true the form submits normally to OnPostAsync -->
+<form method="post" onsubmit="return validateForm()">
 
-<div class="mt-5">
-    <div class="row g-4">
-        
-        <div class="col-auto">
-            <label for="countryCode" class="col-form-label">Select Country</label>
+    <!-- Page Header -->
+    <div class="bg-secondary bg-opacity-10 py-2 mb-5">
+        <div class="container">
+            <h1>Add State Information</h1>
         </div>
-        <div class="col">
-            <select class="form-control" asp-for="StateTab.CountryId" id="countryCode">
-                <option selected value="">--Select Country--</option>
-            @foreach (var item in Model.CountryList)
-                            {
-                                <option value="@item.Id">@item.CountryName</option>
-                            }
-            </select>
-        </div>       
     </div>
 
-    
-    <div class="mt-3">
-            <button class="btn btn-primary" type="submit">Save</button>
-    </div>
-</div>
+    <!-- Error Box -->
+    <!-- This is hidden by default and only shows when validateForm finds errors -->
+    <div id="errorBox" class="container mt-3 alert alert-danger d-none"></div>
 
+    <!-- Country Dropdown Section -->
+    <div class="mt-5">
+        <div class="row g-4">
 
-            <div class="mt-5">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th scope="col">S/N</th>
-                            <th scope="col">State Code</th>
-                            <th scope="col">State Name</th>
-                            <th scope="col" style="width: 120px;">Do Something</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @for (int i = 0; i < Model.StateTab.StateList.Count; i++)
-                    {
-                        var state = Model.StateTab.StateList[i];
-                        <tr>
-                            <th scope="row">@(i+1)</th>
-                            <td>           
-                            <input asp-for="StateTab.StateList[i].StateCode" type="text" id="stateCode" class="form-control">
-</td>
-                        <td>
-                            <input asp-for="StateTab.StateList[i].StateName" type="text" id="stateCode" class="form-control">
-                        </td>
-                            <td class="p-1 text-center">
-                                <button class="btn btn-danger btn-sm" type="button" onclick="removeRow(this)">Remove Row</button>
-                            </td>
-                        </tr>
-
-                    }
-                       
-                    </tbody>
-                </table>
-
-
-                <div class="row g-3 mt-3">
-                    <div class="col-auto">
-                        <button class="btn btn-secondary" type="button" id="addRowBtn">Add row</button>
-                    </div>
-                    <div class="col-auto ">
-                        <button class="btn btn-success" type="button">Submit</button>
-                    </div>
-                    <div class="col-auto ">
-                        <a href="/Users/List" class="btn btn-dark ">Back to List</a>
-                    </div>
-                </div>
+            <!-- Country Dropdown -->
+            <!-- Filled from Model.CountryList which I loaded in OnGetAsync -->
+            <div class="col-auto">
+                <label for="countrySelect" class="col-form-label">Select Country</label>
             </div>
-    </form>
+            <div class="col">
+                <!-- asp-for binds this dropdown to StateTab.CountryId -->
+                <!-- so when the form submits ASP.NET knows which country was selected -->
+                <select class="form-control" asp-for="StateTab.CountryId" id="countrySelect">
+                    <option selected value="0">--Select Country--</option>
+                    @foreach (var item in Model.CountryList)
+                    {
+                        <option value="@item.Id">@item.CountryName</option>
+                    }
+                </select>
+            </div>
+
+        </div>
+
+        
+    </div>
+
+    <!-- State Table -->
+    <!-- Each row has a State Code input, State Name input and a Remove Row button -->
+    <div class="mt-5">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th scope="col">S/N</th>
+                    <th scope="col">State Code</th>
+                    <th scope="col">State Name</th>
+                    <th scope="col" style="width: 120px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- I'm looping through StateList which starts with however many rows -->
+                <!-- OnGetAsync decided to load — could be 0, 5, or any number -->
+                <!-- The index i is critical — ASP.NET uses it to map each row -->
+                <!-- back to StateTab.StateList[i] when the form submits -->
+                @for (int i = 0; i < Model.StateTab.StateList.Count; i++)
+                {
+                    <tr>
+                        <th scope="row">@(i + 1)</th>
+                        <td>
+                            <input asp-for="StateTab.StateList[i].StateCode"
+                                   type="text"
+                                   class="form-control"
+                                   placeholder="e.g SC001">
+                        </td>
+                        <td>
+                            <input asp-for="StateTab.StateList[i].StateName"
+                                   type="text"
+                                   class="form-control"
+                                   placeholder="e.g Lagos">
+                        </td>
+                        <td class="p-1 text-center">
+                            <button class="btn btn-danger btn-sm"
+                                    type="button"
+                                    onclick="removeRow(this)">
+                                Remove Row
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Table Action Buttons -->
+        <div class="row g-3 mt-3">
+            <div class="col-auto">
+                <!-- Add Row adds a blank input row to the bottom of the table -->
+                <button class="btn btn-secondary" type="button" id="addRowBtn">Add row</button>
+            </div>
+            <div class="col-auto">
+                <!-- Submit sends the whole form to OnPostAsync -->
+                <button class="btn btn-success" type="submit">Submit</button>
+            </div>
+            <div class="col-auto">
+                <a href="/Users/List" class="btn btn-dark">Back to List</a>
+            </div>
+        </div>
+    </div>
+
+</form>
+
 <partial name="_ValidationScriptsPartial" />
 
 <script>
-    //  this Tracks the total number of rows in the table
-    // It Starts at 3 because there are 3 hardcoded rows already in the table
-    let rowCount = 3;
+    // I'm counting how many rows are actually in the table when the page loads
+    // This works whether OnGetAsync loads 0, 5, or any number of rows
+    let rowCount = document.querySelectorAll('tbody tr').length;
 
-    // removeRow: removes the row that contains the clicked "Remove Row" button
-    // 'button' refers to whichever Remove Row button was clicked
+    // removeRow: this runs when I click the Remove Row button on any row
+    // 'button' is whichever Remove Row button I clicked
     function removeRow(button) {
-        // closest('tr') travels up the DOM to find the parent row of the clicked button
+        // I'm climbing up the DOM from the button to find its parent <tr> row
         const row = button.closest('tr');
 
-        // Removes that row from the table
+        // I'm removing that entire row from the table
         row.remove();
 
-        // After removing, re-number all remaining rows so S/N stays in order
+        // I'm calling renumberRows so the S/N column stays in correct order
         renumberRows();
     }
 
-    // renumberRows: loops through all rows and updates the S/N column
-    // This ensures numbering stays correct after a row is removed
+    // renumberRows: after removing a row I call this to fix the S/N numbers
+    // so there are no gaps like 1, 2, 4, 5
     function renumberRows() {
-        // Get all current rows inside tbody
         const rows = document.querySelectorAll('tbody tr');
 
-        // Loop through each row and update its S/N number
-        // 'index' starts at 0 so we add 1 to make it start from 1
+        // index starts at 0 so I add 1 to make the numbering start from 1
         rows.forEach((row, index) => {
             row.querySelector('th').textContent = index + 1;
         });
 
-        // Update rowCount to match the current number of rows
+        // I'm updating rowCount to match how many rows are in the table right now
         rowCount = rows.length;
     }
 
-    // findFirstEmptyRow: scans the table to find the first row where
-    // both the Code and Country cells are empty
-    // Returns the empty row if found, or null if no empty row exists
-    function findFirstEmptyRow() {
-        const rows = document.querySelectorAll('tbody tr');
-
-        for (let row of rows) {
-            // Get the td cells in this row (excludes the th S/N cell)
-            const cells = row.querySelectorAll('td');
-            const codeCell = cells[0];       // First td = Code column
-            const countryCell = cells[1];    // Second td = Country column
-
-            // Check if both cells are empty (no text inside them)
-            if (codeCell.textContent.trim() === '' && countryCell.textContent.trim() === '') {
-                return row; // Return this empty row so Save can fill it
-            }
-        }
-
-        // No empty row was found
-        return null;
-    }
-
-    // Save Button: reads values from the input fields and adds them to the table
-    document.getElementById('saveBtn').addEventListener('click', function () {
-
-        // Read and trim whitespace from both input fields
-        const code = document.getElementById('countryCode').value.trim();
-        const country = document.getElementById('countryName').value.trim();
-
-        // If both fields are empty, do nothing and stop here
-        if (code === '' && country === '') return;
-
-        // Check if there is already a blank row waiting to be filled
-        const emptyRow = findFirstEmptyRow();
-
-        if (emptyRow) {
-            // An empty row exists — fill its Code and Country cells with the typed values
-            const cells = emptyRow.querySelectorAll('td');
-            cells[0].textContent = code;      // Fill the Code cell
-            cells[1].textContent = country;   // Fill the Country cell
-        } else {
-            // No empty row found — create a brand new row with the typed values
-            rowCount++;
-            const tbody = document.querySelector('tbody');
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <th scope="row">${rowCount}</th>
-                <td>${code}</td>
-                <td>${country}</td>
-                <td class="p-1 text-center">
-                    <button class="btn btn-danger btn-sm" type="button" onclick="removeRow(this)">Remove Row</button>
-                </td>
-            `;
-            tbody.appendChild(newRow); // Add the new row to the bottom of the table
-        }
-
-        // Clear both input fields after saving so they are ready for new input
-        document.getElementById('countryCode').value = '';
-        document.getElementById('countryName').value = '';
-    });
-
-    // Add Row Button: adds a completely blank row to the bottom of the table
-    // This blank row can later be filled using the Save button
+    // addRowBtn: when I click Add Row this creates a new blank row with input fields
+    // and adds it to the bottom of the table
     document.getElementById('addRowBtn').addEventListener('click', function () {
+        // I'm incrementing rowCount first so the new row gets the next correct number
         rowCount++;
+
         const tbody = document.querySelector('tbody');
+
+        // I'm using rowCount - 1 as the index in the input name attributes
+        // ASP.NET model binding uses this index to know which row is which
+        // e.g StateTab.StateList[5].StateCode
+        const index = rowCount - 1;
+
         const newRow = document.createElement('tr');
         newRow.innerHTML = `
             <th scope="row">${rowCount}</th>
-            <td></td>
-            <td></td>
+            <td>
+                <input name="StateTab.StateList[${index}].StateCode"
+                       type="text"
+                       class="form-control"
+                       placeholder="e.g SC001">
+            </td>
+            <td>
+                <input name="StateTab.StateList[${index}].StateName"
+                       type="text"
+                       class="form-control"
+                       placeholder="e.g Lagos">
+            </td>
             <td class="p-1 text-center">
-                <button class="btn btn-danger btn-sm" type="button" onclick="removeRow(this)">Remove Row</button>
+                <button class="btn btn-danger btn-sm"
+                        type="button"
+                        onclick="removeRow(this)">Remove Row</button>
             </td>
         `;
-        tbody.appendChild(newRow); // Attach the blank row to the table
+
+        // I'm attaching the new row to the bottom of the table body
+        tbody.appendChild(newRow);
     });
+
+    // validateForm: I'm running this before the form submits
+    // I'm doing all validation here on the frontend so the page never
+    // reloads and loses the dropdown selections
+    function validateForm() {
+        // I'm clearing any old error messages from a previous submit attempt
+        const errorBox = document.getElementById('errorBox');
+        errorBox.innerHTML = '';
+        errorBox.classList.add('d-none');
+
+        // I'm collecting all errors into this array
+        let errors = [];
+
+        // I'm checking if the user selected a country
+        // value of 0 means they left it on the default --Select Country-- option
+        const countryId = document.getElementById('countrySelect').value;
+        if (!countryId || countryId === '0') {
+            errors.push('Please select a country before saving.');
+        }
+
+        // I'm checking if at least one row has been filled in
+        // I loop through all rows and check if any input has a value
+        const rows = document.querySelectorAll('tbody tr');
+        let filledCount = 0;
+
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+
+            // I'm checking if either the State Code or State Name input has a value
+            const codeVal = inputs[0] ? inputs[0].value.trim() : '';
+            const nameVal = inputs[1] ? inputs[1].value.trim() : '';
+
+            // I'm counting this row as filled if either field has something in it
+            if (codeVal !== '' || nameVal !== '') {
+                filledCount++;
+            }
+        });
+
+        // If no row was filled at all I add an error
+        if (filledCount === 0) {
+            errors.push('Please fill in at least one state before saving.');
+        }
+
+        // If there are any errors I show them in the error box
+        // and stop the form from submitting by returning false
+        if (errors.length > 0) {
+            errorBox.classList.remove('d-none');
+
+            // I'm building a bullet list of all errors and injecting it into the error box
+            errorBox.innerHTML = '<ul class="mb-0">' +
+                errors.map(e => `<li>${e}</li>`).join('') +
+                '</ul>';
+
+            // Returning false stops the form from submitting
+            return false;
+        }
+
+        // Everything passed — I'm allowing the form to submit to OnPostAsync
+        return true;
+    }
 </script>

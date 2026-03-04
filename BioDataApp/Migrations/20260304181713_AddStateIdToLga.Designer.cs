@@ -3,6 +3,7 @@ using BioDataApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BioDataApp.Migrations
 {
     [DbContext(typeof(BioDataDbContext))]
-    partial class BioDataDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260304181713_AddStateIdToLga")]
+    partial class AddStateIdToLga
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
