@@ -25,6 +25,11 @@ namespace BioDataApp.Pages.Users
         // I use it to populate the table on the page
         public List<CountryTab> CountryList { get; set; } = [];
 
+        // I'm using this flag to tell the frontend whether the save was successful
+        // It starts as false and I only set it to true after a successful save
+        // The frontend reads this to decide whether to show the success message
+        public bool SaveSuccess { get; set; } = false;
+
         // OnGetAsync runs when the page first loads
         public async Task<IActionResult> OnGetAsync()
         {
@@ -64,6 +69,10 @@ namespace BioDataApp.Pages.Users
 
                 // I'm saving the record to the database
                 int succeed = await context.SaveChangesAsync();
+
+                // I'm setting SaveSuccess to true so the frontend knows
+                // the save completed successfully and can show the success message
+                SaveSuccess = true;
 
                 // I'm clearing ModelState so ASP.NET doesn't carry over
                 // old validation state from the previous submit

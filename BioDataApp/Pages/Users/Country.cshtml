@@ -19,6 +19,15 @@
     <!-- This is hidden by default and only shows when validateForm finds errors -->
     <div id="errorBox" class="container mt-3 alert alert-danger d-none"></div>
 
+    <!-- Success Box -->
+    <!-- This is hidden by default and only shows after a successful save -->
+    <!-- I'm checking Model.SaveSuccess which OnPostAsync sets to true after saving -->
+    <!-- If SaveSuccess is true I remove the d-none class so the message appears -->
+    <div id="successBox" class="container mt-3 alert alert-success @(Model.SaveSuccess ? "" : "d-none")">
+        <strong>✓ Country successfully saved!</strong>
+        The country record has been saved to the database.
+    </div>
+
     <!-- Input Section -->
     <div class="mt-5">
         <div class="row g-4">
@@ -104,19 +113,12 @@
 
 <script>
     // I'm counting how many rows are actually in the table when the page loads
-    // This works whether the table has 0, 3, or any number of rows
     let rowCount = document.querySelectorAll('tbody tr').length;
 
     // removeRow: this runs when I click the Remove Row button on any row
-    // 'button' is whichever Remove Row button I clicked
     function removeRow(button) {
-        // I'm climbing up the DOM from the button to find its parent <tr> row
         const row = button.closest('tr');
-
-        // I'm removing that entire row from the table
         row.remove();
-
-        // I'm calling renumberRows so the S/N column stays in correct order
         renumberRows();
     }
 
@@ -124,51 +126,44 @@
     // It pulls the values from that row and fills the input fields above
     // so I can edit an existing country instead of creating a new one
     function editRow(button) {
-        // I'm climbing up the DOM to find the row that was clicked
         const row = button.closest('tr');
-
-        // I'm reading the hidden Id, country code and country name from the row
         const idRow = row.querySelector('.idRow').value;
         const nameRow = row.querySelector('.nameRow').textContent.trim();
         const codeRow = row.querySelector('.codeRow').textContent.trim();
 
         // I'm filling the input fields at the top with the row's values
-        // so the user can edit them and click Save to update
         document.getElementById('countryCode').value = codeRow;
         document.getElementById('countryName').value = nameRow;
 
-        // I'm setting the hidden Id field so OnPostAsync knows
-        // this is an update not a new record
+        // I'm setting the hidden Id so OnPostAsync knows this is an update
         document.getElementById('id').value = idRow;
+
+        // I'm hiding the success box when the user starts editing a row
+        // so the old success message doesn't show while they are making changes
+        document.getElementById('successBox').classList.add('d-none');
     }
 
     // renumberRows: after removing a row I call this to fix the S/N numbers
-    // so there are no gaps like 1, 2, 4, 5
     function renumberRows() {
         const rows = document.querySelectorAll('tbody tr');
-
-        // index starts at 0 so I add 1 to make the numbering start from 1
         rows.forEach((row, index) => {
             row.querySelector('th').textContent = index + 1;
         });
-
-        // I'm updating rowCount to match how many rows are in the table right now
         rowCount = rows.length;
     }
 
     // validateForm: I'm running this before the form submits
-    // I'm checking everything on the frontend so the page never reloads
-    // with missing or broken input states
     function validateForm() {
-        // I'm clearing any old error messages from a previous submit attempt
         const errorBox = document.getElementById('errorBox');
         errorBox.innerHTML = '';
         errorBox.classList.add('d-none');
 
-        // I'm collecting all errors into this array
+        // I'm also hiding the success box when a new submit attempt starts
+        // so stale success messages from a previous save don't linger
+        document.getElementById('successBox').classList.add('d-none');
+
         let errors = [];
 
-        // I'm reading the current values from both input fields
         const code = document.getElementById('countryCode').value.trim();
         const country = document.getElementById('countryName').value.trim();
 
@@ -182,21 +177,32 @@
             errors.push('Please enter a country name before saving.');
         }
 
-        // If there are any errors I show them in the error box
-        // and stop the form from submitting by returning false
         if (errors.length > 0) {
             errorBox.classList.remove('d-none');
-
-            // I'm building a bullet list of all errors and injecting it into the error box
             errorBox.innerHTML = '<ul class="mb-0">' +
                 errors.map(e => `<li>${e}</li>`).join('') +
                 '</ul>';
-
-            // Returning false stops the form from submitting
             return false;
         }
 
-        // Everything passed — I'm allowing the form to submit to OnPostAsync
         return true;
     }
+
+    // I'm auto-scrolling to the success box if it is visible when the page loads
+    // so the user doesn't have to scroll up to see the confirmation after saving
+    window.addEventListener('load', function () {
+        const successBox = document.getElementById('successBox');
+
+        // I'm checking if the success box is currently visible
+        if (!successBox.classList.contains('d-none')) {
+            // I'm smoothly scrolling the success message into view
+            successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // I'm automatically hiding the success message after 5 seconds
+            // so it doesn't permanently clutter the page
+            setTimeout(() => {
+                successBox.classList.add('d-none');
+            }, 5000);
+        }
+    });
 </script>

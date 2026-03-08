@@ -19,6 +19,15 @@
     <!-- This is hidden by default and only shows when validateForm finds errors -->
     <div id="errorBox" class="container mt-3 alert alert-danger d-none"></div>
 
+    <!-- Success Box -->
+    <!-- This is hidden by default and only shows after a successful save -->
+    <!-- I'm checking Model.SaveSuccess which OnPostAsync sets to true after saving -->
+    <!-- If SaveSuccess is true I remove the d-none class so the message appears -->
+    <div id="successBox" class="container mt-3 alert alert-success @(Model.SaveSuccess ? "" : "d-none")">
+        <strong>✓ State successfully saved!</strong>
+        The state records have been saved to the database.
+    </div>
+
     <!-- Country Dropdown Section -->
     <div class="mt-5">
         <div class="row g-4">
@@ -29,20 +38,24 @@
                 <label for="countrySelect" class="col-form-label">Select Country</label>
             </div>
             <div class="col">
-                <!-- asp-for binds this dropdown to StateTab.CountryId -->
-                <!-- so when the form submits ASP.NET knows which country was selected -->
-                <select class="form-control" asp-for="StateTab.CountryId" id="countrySelect">
-                    <option selected value="0">--Select Country--</option>
+                <!-- asp-for binds this to StateTab.CountryId -->
+                <!-- onchange fires getStates() to reload the page with the countryId -->
+                <!-- I'm pre-selecting the country using StateTab.CountryId -->
+                <!-- so the dropdown stays selected after a save -->
+                <select class="form-control" onchange="getStates()"
+                        asp-for="StateTab.CountryId" id="countrySelect">
+                    <option value="0">--Select Country--</option>
                     @foreach (var item in Model.CountryList)
                     {
-                        <option value="@item.Id">@item.CountryName</option>
+                        <!-- Fixed: place the conditional inside the attribute value to avoid C# in attribute declaration area -->
+                        <option value="@item.Id" selected="@(item.Id == Model.StateTab.CountryId ? "selected" : null)">
+                            @item.CountryName
+                        </option>
                     }
                 </select>
             </div>
 
         </div>
-
-        
     </div>
 
     <!-- State Table -->
@@ -58,8 +71,8 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- I'm looping through StateList which starts with however many rows -->
-                <!-- OnGetAsync decided to load — could be 0, 5, or any number -->
+                <!-- I'm looping through StateList -->
+                <!-- After a save this shows the updated states for the current country -->
                 <!-- The index i is critical — ASP.NET uses it to map each row -->
                 <!-- back to StateTab.StateList[i] when the form submits -->
                 @for (int i = 0; i < Model.StateTab.StateList.Count; i++)
@@ -81,9 +94,7 @@
                         <td class="p-1 text-center">
                             <button class="btn btn-danger btn-sm"
                                     type="button"
-                                    onclick="removeRow(this)">
-                                Remove Row
-                            </button>
+                                    onclick="removeRow(this)">Remove Row</button>
                         </td>
                     </tr>
                 }
@@ -112,19 +123,13 @@
 
 <script>
     // I'm counting how many rows are actually in the table when the page loads
-    // This works whether OnGetAsync loads 0, 5, or any number of rows
+    // This works whether the page loaded with existing states or blank rows
     let rowCount = document.querySelectorAll('tbody tr').length;
 
     // removeRow: this runs when I click the Remove Row button on any row
-    // 'button' is whichever Remove Row button I clicked
     function removeRow(button) {
-        // I'm climbing up the DOM from the button to find its parent <tr> row
         const row = button.closest('tr');
-
-        // I'm removing that entire row from the table
         row.remove();
-
-        // I'm calling renumberRows so the S/N column stays in correct order
         renumberRows();
     }
 
@@ -132,27 +137,35 @@
     // so there are no gaps like 1, 2, 4, 5
     function renumberRows() {
         const rows = document.querySelectorAll('tbody tr');
-
-        // index starts at 0 so I add 1 to make the numbering start from 1
         rows.forEach((row, index) => {
             row.querySelector('th').textContent = index + 1;
         });
-
-        // I'm updating rowCount to match how many rows are in the table right now
         rowCount = rows.length;
     }
 
-    // addRowBtn: when I click Add Row this creates a new blank row with input fields
-    // and adds it to the bottom of the table
-    document.getElementById('addRowBtn').addEventListener('click', function () {
-        // I'm incrementing rowCount first so the new row gets the next correct number
-        rowCount++;
+    // getStates: this runs when I change the country dropdown
+    // It reloads the page with the selected countryId in the URL
+    // so OnGetAsync loads the existing states for that country into the table
+    function getStates() {
+        const countrySelect = document.getElementById('countrySelect');
 
+        // I only redirect if a real country was selected not the default option
+        if (countrySelect.value && countrySelect.value !== '0') {
+            // I'm redirecting to the same State page but with the countryId in the URL
+            // This causes OnGetAsync to run with the id parameter set
+            // which loads the existing states for this country into the table
+            window.location.href = window.location.origin +
+                '/Users/State?id=' + countrySelect.value;
+        }
+    }
+
+    // addRowBtn: when I click Add Row this creates a new blank row with input fields
+    document.getElementById('addRowBtn').addEventListener('click', function () {
+        rowCount++;
         const tbody = document.querySelector('tbody');
 
         // I'm using rowCount - 1 as the index in the input name attributes
         // ASP.NET model binding uses this index to know which row is which
-        // e.g StateTab.StateList[5].StateCode
         const index = rowCount - 1;
 
         const newRow = document.createElement('tr');
@@ -176,68 +189,72 @@
                         onclick="removeRow(this)">Remove Row</button>
             </td>
         `;
-
-        // I'm attaching the new row to the bottom of the table body
         tbody.appendChild(newRow);
     });
 
     // validateForm: I'm running this before the form submits
     // I'm doing all validation here on the frontend so the page never
-    // reloads and loses the dropdown selections
+    // reloads and loses the dropdown selection
     function validateForm() {
-        // I'm clearing any old error messages from a previous submit attempt
         const errorBox = document.getElementById('errorBox');
         errorBox.innerHTML = '';
         errorBox.classList.add('d-none');
 
-        // I'm collecting all errors into this array
+        // I'm also hiding the success box when a new submit attempt starts
+        // so stale success messages from a previous save don't linger
+        document.getElementById('successBox').classList.add('d-none');
+
         let errors = [];
 
         // I'm checking if the user selected a country
-        // value of 0 means they left it on the default --Select Country-- option
         const countryId = document.getElementById('countrySelect').value;
         if (!countryId || countryId === '0') {
             errors.push('Please select a country before saving.');
         }
 
         // I'm checking if at least one row has been filled in
-        // I loop through all rows and check if any input has a value
         const rows = document.querySelectorAll('tbody tr');
         let filledCount = 0;
 
         rows.forEach(row => {
             const inputs = row.querySelectorAll('input');
-
-            // I'm checking if either the State Code or State Name input has a value
             const codeVal = inputs[0] ? inputs[0].value.trim() : '';
             const nameVal = inputs[1] ? inputs[1].value.trim() : '';
-
-            // I'm counting this row as filled if either field has something in it
             if (codeVal !== '' || nameVal !== '') {
                 filledCount++;
             }
         });
 
-        // If no row was filled at all I add an error
         if (filledCount === 0) {
             errors.push('Please fill in at least one state before saving.');
         }
 
-        // If there are any errors I show them in the error box
-        // and stop the form from submitting by returning false
         if (errors.length > 0) {
             errorBox.classList.remove('d-none');
-
-            // I'm building a bullet list of all errors and injecting it into the error box
             errorBox.innerHTML = '<ul class="mb-0">' +
                 errors.map(e => `<li>${e}</li>`).join('') +
                 '</ul>';
-
-            // Returning false stops the form from submitting
             return false;
         }
 
-        // Everything passed — I'm allowing the form to submit to OnPostAsync
         return true;
     }
+
+    // I'm auto-scrolling to the success box if it is visible when the page loads
+    // so the user doesn't have to scroll up to see the confirmation after saving
+    window.addEventListener('load', function () {
+        const successBox = document.getElementById('successBox');
+
+        // I'm checking if the success box is currently visible
+        if (!successBox.classList.contains('d-none')) {
+            // I'm smoothly scrolling the success message into view
+            successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // I'm automatically hiding the success message after 5 seconds
+            // so it doesn't permanently clutter the page
+            setTimeout(() => {
+                successBox.classList.add('d-none');
+            }, 5000);
+        }
+    });
 </script>

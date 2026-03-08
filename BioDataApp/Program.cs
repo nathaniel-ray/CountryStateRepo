@@ -1,4 +1,5 @@
 using BioDataApp.Data;
+using BioDataApp.ServiceInterface;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddDbContext<BioDataDbContext>(options =>
 options.UseSqlServer(
     builder.Configuration.GetConnectionString("BioDataConnectionString"))); //add the db context as a service
+
+builder.Services.AddScoped<ICountryStateLGAServices, CountryStateLGAServices>(); //add the db context interface as a service
 
 var app = builder.Build();
 
