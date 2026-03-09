@@ -1,0 +1,204 @@
+﻿@page
+@model BioDataApp.Pages.Users.PPEGroupModel
+@{
+}
+
+<!-- I'm calling validateForm when the form submits -->
+<!-- If it returns false the form stops and shows the errors -->
+<!-- If it returns true the form submits normally to OnPostAsync -->
+<form method="post" onsubmit="return validateForm()">
+
+    <!-- Page Header -->
+    <div class="bg-secondary bg-opacity-10 py-2 mb-5">
+        <div class="container">
+            <h1>PPE Group Setup</h1>
+        </div>
+    </div>
+
+    <!-- Error Box -->
+    <!-- This is hidden by default and only shows when validateForm finds errors -->
+    <div id="errorBox" class="container mt-3 alert alert-danger d-none"></div>
+
+    <!-- Success Box -->
+    <!-- This is hidden by default and only shows after a successful save -->
+    <!-- I'm checking Model.SaveSuccess which OnPostAsync sets to true after saving -->
+    <!-- If SaveSuccess is true I remove the d-none class so the message appears -->
+   @*  <div id="successBox" class="container mt-3 alert alert-success @(Model.SaveSuccess ? "" : "d-none")">
+        <strong>✓ Country successfully saved!</strong>
+        The country record has been saved to the database.
+    </div> *@
+
+    <!-- Input Section -->
+    <div class="mt-5">
+        <div class="row g-4">
+
+            <!-- Country Code Input -->
+            <div class="col-auto">
+                <label for="countryCode" class="col-form-label">Country Code</label>
+            </div>
+            <div class="col">
+                <!-- Hidden input carries the Id so ASP.NET knows if this is an edit or a new record -->
+                <input type="hidden" asp-for="PPEGroupTab.Id" id="id">
+                <input type="hidden" asp-for="PPEGroupTab.ModuleCode" id="">
+                <input type="hidden" asp-for="PPEGroupTab.FormCode" id="">
+                <input type="hidden" asp-for="PPEGroupTab.UserCode" id="">
+                <input type="text" asp-for="PPEGroupTab.PpeCode" id="countryCode"
+                       class="form-control" placeholder="country code e.g +234" aria-label="code">
+            </div>
+
+            <!-- Country Name Input -->
+            <div class="col-auto">
+                <label for="countryName" class="col-form-label">Input Country</label>
+            </div>
+            <div class="col">
+                <input asp-for="PPEGroupTab.PpeDesc" type="text" id="countryName"
+                       class="form-control" placeholder="country e.g Brazil" aria-label="country">
+            </div>
+
+        </div>
+
+        <!-- Save and Back Buttons -->
+        <div class="mt-3">
+            <button class="btn btn-primary" type="submit">Save</button>
+            <a href="/Users/List" class="btn btn-dark ms-2">Back to List</a>
+        </div>
+    </div>
+
+    <!-- Country Table -->
+    <!-- I'm only showing the table if there are countries saved in the database -->
+    @if (Model.PPEGroupTabs.Count > 0)
+    {
+        <div class="mt-5">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th scope="col">Action</th>
+                        <th scope="col">S/N</th>
+                        <th scope="col">Code</th>
+                        <th scope="col">Country</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- I'm looping through CountryList to display each saved country -->
+                    @for (int i = 0; i < Model.PPEGroupTabs.Count; i++)
+                    {
+                        var item = Model.PPEGroupTabs[i];
+                        <tr>
+                            <td class="p-1 text-center">
+                                <!-- Hidden input carries the Id of this row -->
+                                <!-- editRow uses it to fill the form above for editing -->
+                                <input type="hidden" value="@item.Id" class="idRow @i" />
+                                <button class="btn btn-primary btn-sm" type="button"
+                                        onclick="editRow(this)">
+                                    Select
+                                </button>
+                            </td>
+                            <th scope="row">@(i + 1)</th>
+                            <td class="codeRow">@item.PpeCode</td>
+                            <td class="nameRow">@item.PpeDesc</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</form>
+
+<partial name="_ValidationScriptsPartial" />
+
+<script>
+    // I'm counting how many rows are actually in the table when the page loads
+    let rowCount = document.querySelectorAll('tbody tr').length;
+
+    // removeRow: this runs when I click the Remove Row button on any row
+    function removeRow(button) {
+        const row = button.closest('tr');
+        row.remove();
+        renumberRows();
+    }
+
+    // editRow: this runs when I click the Select button on a row
+    // It pulls the values from that row and fills the input fields above
+    // so I can edit an existing country instead of creating a new one
+    function editRow(button) {
+        const row = button.closest('tr');
+        const idRow = row.querySelector('.idRow').value;
+        const nameRow = row.querySelector('.nameRow').textContent.trim();
+        const codeRow = row.querySelector('.codeRow').textContent.trim();
+
+        // I'm filling the input fields at the top with the row's values
+        document.getElementById('countryCode').value = codeRow;
+        document.getElementById('countryName').value = nameRow;
+
+        // I'm setting the hidden Id so OnPostAsync knows this is an update
+        document.getElementById('id').value = idRow;
+
+        // I'm hiding the success box when the user starts editing a row
+        // so the old success message doesn't show while they are making changes
+        document.getElementById('successBox').classList.add('d-none');
+    }
+
+    // renumberRows: after removing a row I call this to fix the S/N numbers
+    function renumberRows() {
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach((row, index) => {
+            row.querySelector('th').textContent = index + 1;
+        });
+        rowCount = rows.length;
+    }
+
+    // validateForm: I'm running this before the form submits
+    function validateForm() {
+        const errorBox = document.getElementById('errorBox');
+        errorBox.innerHTML = '';
+        errorBox.classList.add('d-none');
+
+        // I'm also hiding the success box when a new submit attempt starts
+        // so stale success messages from a previous save don't linger
+        document.getElementById('successBox').classList.add('d-none');
+
+        let errors = [];
+
+        const code = document.getElementById('countryCode').value.trim();
+        const country = document.getElementById('countryName').value.trim();
+
+        // I'm checking if the Country Code field is empty
+        if (code === '') {
+            errors.push('Please enter a country code before saving.');
+        }
+
+        // I'm checking if the Country Name field is empty
+        if (country === '') {
+            errors.push('Please enter a country name before saving.');
+        }
+
+        if (errors.length > 0) {
+            errorBox.classList.remove('d-none');
+            errorBox.innerHTML = '<ul class="mb-0">' +
+                errors.map(e => `<li>${e}</li>`).join('') +
+                '</ul>';
+            return false;
+        }
+
+        return true;
+    }
+
+    // I'm auto-scrolling to the success box if it is visible when the page loads
+    // so the user doesn't have to scroll up to see the confirmation after saving
+    window.addEventListener('load', function () {
+        const successBox = document.getElementById('successBox');
+
+        // I'm checking if the success box is currently visible
+        if (!successBox.classList.contains('d-none')) {
+            // I'm smoothly scrolling the success message into view
+            successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // I'm automatically hiding the success message after 5 seconds
+            // so it doesn't permanently clutter the page
+            setTimeout(() => {
+                successBox.classList.add('d-none');
+            }, 5000);
+        }
+    });
+</script>
