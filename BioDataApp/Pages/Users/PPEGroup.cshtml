@@ -23,36 +23,49 @@
     <!-- This is hidden by default and only shows after a successful save -->
     <!-- I'm checking Model.SaveSuccess which OnPostAsync sets to true after saving -->
     <!-- If SaveSuccess is true I remove the d-none class so the message appears -->
-   @*  <div id="successBox" class="container mt-3 alert alert-success @(Model.SaveSuccess ? "" : "d-none")">
-        <strong>✓ Country successfully saved!</strong>
-        The country record has been saved to the database.
-    </div> *@
+    <div id="successBox" class="container mt-3 alert alert-success @(Model.SaveSuccess ? "" : "d-none")">
+        <strong>✓ PPE Group successfully saved!</strong>
+        The PPE Group record has been saved successfully.
+    </div>
+
+    <!-- API Error Box -->
+    <!-- This only renders if the API returned an error during save -->
+    <!-- I'm checking Model.SaveError which OnPostAsync sets if the API call fails -->
+    @if (!string.IsNullOrEmpty(Model.SaveError))
+    {
+        <div class="container mt-3 alert alert-danger">
+            <strong>✗ @Model.SaveError</strong>
+        </div>
+    }
 
     <!-- Input Section -->
     <div class="mt-5">
         <div class="row g-4">
 
-            <!-- Country Code Input -->
+            <!-- PPE Code Input -->
             <div class="col-auto">
-                <label for="countryCode" class="col-form-label">Country Code</label>
+                <label for="ppeCode" class="col-form-label">PPE Code</label>
             </div>
             <div class="col">
-                <!-- Hidden input carries the Id so ASP.NET knows if this is an edit or a new record -->
+                <!-- Hidden inputs carry values the API needs but the user doesn't type -->
+                <!-- Id tells the API if this is a new record or an update -->
                 <input type="hidden" asp-for="PPEGroupTab.Id" id="id">
-                <input type="hidden" asp-for="PPEGroupTab.ModuleCode" id="">
-                <input type="hidden" asp-for="PPEGroupTab.FormCode" id="">
-                <input type="hidden" asp-for="PPEGroupTab.UserCode" id="">
-                <input type="text" asp-for="PPEGroupTab.PpeCode" id="countryCode"
-                       class="form-control" placeholder="country code e.g +234" aria-label="code">
+                <!-- ModuleCode, FormCode and UserCode are required by the API -->
+                <!-- I'm keeping them hidden so they are submitted with the form -->
+                <input type="hidden" asp-for="PPEGroupTab.ModuleCode">
+                <input type="hidden" asp-for="PPEGroupTab.FormCode">
+                <input type="hidden" asp-for="PPEGroupTab.UserCode">
+                <input type="text" asp-for="PPEGroupTab.PpeCode" id="ppeCode"
+                       class="form-control" placeholder="e.g PPE001" aria-label="code">
             </div>
 
-            <!-- Country Name Input -->
+            <!-- PPE Description Input -->
             <div class="col-auto">
-                <label for="countryName" class="col-form-label">Input Country</label>
+                <label for="ppeDesc" class="col-form-label">PPE Description</label>
             </div>
             <div class="col">
-                <input asp-for="PPEGroupTab.PpeDesc" type="text" id="countryName"
-                       class="form-control" placeholder="country e.g Brazil" aria-label="country">
+                <input asp-for="PPEGroupTab.PpeDesc" type="text" id="ppeDesc"
+                       class="form-control" placeholder="e.g Safety Helmet" aria-label="description">
             </div>
 
         </div>
@@ -64,8 +77,8 @@
         </div>
     </div>
 
-    <!-- Country Table -->
-    <!-- I'm only showing the table if there are countries saved in the database -->
+    <!-- PPE Group Table -->
+    <!-- I'm only showing the table if there are records returned from the API -->
     @if (Model.PPEGroupTabs.Count > 0)
     {
         <div class="mt-5">
@@ -74,12 +87,12 @@
                     <tr>
                         <th scope="col">Action</th>
                         <th scope="col">S/N</th>
-                        <th scope="col">Code</th>
-                        <th scope="col">Country</th>
+                        <th scope="col">PPE Code</th>
+                        <th scope="col">PPE Description</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- I'm looping through CountryList to display each saved country -->
+                    <!-- I'm looping through PPEGroupTabs to display each record -->
                     @for (int i = 0; i < Model.PPEGroupTabs.Count; i++)
                     {
                         var item = Model.PPEGroupTabs[i];
@@ -87,7 +100,7 @@
                             <td class="p-1 text-center">
                                 <!-- Hidden input carries the Id of this row -->
                                 <!-- editRow uses it to fill the form above for editing -->
-                                <input type="hidden" value="@item.Id" class="idRow @i" />
+                                <input type="hidden" value="@item.Id" class="idRow" />
                                 <button class="btn btn-primary btn-sm" type="button"
                                         onclick="editRow(this)">
                                     Select
@@ -111,27 +124,25 @@
     // I'm counting how many rows are actually in the table when the page loads
     let rowCount = document.querySelectorAll('tbody tr').length;
 
-    // removeRow: this runs when I click the Remove Row button on any row
-    function removeRow(button) {
-        const row = button.closest('tr');
-        row.remove();
-        renumberRows();
-    }
-
     // editRow: this runs when I click the Select button on a row
     // It pulls the values from that row and fills the input fields above
-    // so I can edit an existing country instead of creating a new one
+    // so I can edit an existing PPE Group instead of creating a new one
     function editRow(button) {
+        // I'm climbing up the DOM to find the row that was clicked
         const row = button.closest('tr');
+
+        // I'm reading the hidden Id, PPE code and PPE description from the row
         const idRow = row.querySelector('.idRow').value;
-        const nameRow = row.querySelector('.nameRow').textContent.trim();
         const codeRow = row.querySelector('.codeRow').textContent.trim();
+        const nameRow = row.querySelector('.nameRow').textContent.trim();
 
         // I'm filling the input fields at the top with the row's values
-        document.getElementById('countryCode').value = codeRow;
-        document.getElementById('countryName').value = nameRow;
+        // so the user can edit them and click Save to update
+        document.getElementById('ppeCode').value = codeRow;
+        document.getElementById('ppeDesc').value = nameRow;
 
-        // I'm setting the hidden Id so OnPostAsync knows this is an update
+        // I'm setting the hidden Id field so OnPostAsync knows
+        // this is an update not a new record
         document.getElementById('id').value = idRow;
 
         // I'm hiding the success box when the user starts editing a row
@@ -139,16 +150,9 @@
         document.getElementById('successBox').classList.add('d-none');
     }
 
-    // renumberRows: after removing a row I call this to fix the S/N numbers
-    function renumberRows() {
-        const rows = document.querySelectorAll('tbody tr');
-        rows.forEach((row, index) => {
-            row.querySelector('th').textContent = index + 1;
-        });
-        rowCount = rows.length;
-    }
-
     // validateForm: I'm running this before the form submits
+    // I'm checking everything on the frontend so the page never reloads
+    // with missing inputs
     function validateForm() {
         const errorBox = document.getElementById('errorBox');
         errorBox.innerHTML = '';
@@ -160,19 +164,22 @@
 
         let errors = [];
 
-        const code = document.getElementById('countryCode').value.trim();
-        const country = document.getElementById('countryName').value.trim();
+        // I'm reading the current values from both input fields
+        const code = document.getElementById('ppeCode').value.trim();
+        const desc = document.getElementById('ppeDesc').value.trim();
 
-        // I'm checking if the Country Code field is empty
+        // I'm checking if the PPE Code field is empty
         if (code === '') {
-            errors.push('Please enter a country code before saving.');
+            errors.push('Please enter a PPE Code before saving.');
         }
 
-        // I'm checking if the Country Name field is empty
-        if (country === '') {
-            errors.push('Please enter a country name before saving.');
+        // I'm checking if the PPE Description field is empty
+        if (desc === '') {
+            errors.push('Please enter a PPE Description before saving.');
         }
 
+        // If there are any errors I show them in the error box
+        // and stop the form from submitting by returning false
         if (errors.length > 0) {
             errorBox.classList.remove('d-none');
             errorBox.innerHTML = '<ul class="mb-0">' +
@@ -181,6 +188,7 @@
             return false;
         }
 
+        // Everything passed — I'm allowing the form to submit to OnPostAsync
         return true;
     }
 
@@ -190,6 +198,7 @@
         const successBox = document.getElementById('successBox');
 
         // I'm checking if the success box is currently visible
+        // by seeing if it does NOT have the d-none class
         if (!successBox.classList.contains('d-none')) {
             // I'm smoothly scrolling the success message into view
             successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
